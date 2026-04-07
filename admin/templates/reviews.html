@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="sidebar">
+  <div class="logo">
+    <h2>♻️ EcoScaner</h2>
+    <span>Admin Panel</span>
+  </div>
+  <nav class="nav">
+    <a href="/"><span class="icon">📊</span> Дашборд</a>
+    <a href="/users"><span class="icon">👥</span> Пользователи</a>
+    <a href="/activity"><span class="icon">📋</span> Активность</a>
+    <a href="/reviews" class="active"><span class="icon">🔎</span> На проверке</a>
+  </nav>
+  <div class="nav nav-bottom">
+    <a href="/logout"><span class="icon">🚪</span> Выйти</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">🔎 На проверке</div>
+  <div class="page-sub">Фото, по которым ИИ не пришли к согласию</div>
+
+  {% if not reviews %}
+  <div class="card" style="text-align:center; padding: 48px; color: var(--muted);">
+    ✅ Очередь пуста — всё проверено!
+  </div>
+  {% endif %}
+
+  {% for r in reviews %}
+  <div class="card" style="margin-bottom: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+
+      <div>
+        <div style="font-size:13px; color:var(--muted); margin-bottom:6px;">
+          #{{ r.id }} — {{ r.created_at[:16] }}
+        </div>
+        <div style="font-size:15px; font-weight:600;">
+          👤 {{ r.first_name or "Аноним" }}
+          {% if r.username %}
+            <span style="color:var(--muted); font-weight:400;">@{{ r.username }}</span>
+          {% endif %}
+        </div>
+        <div style="color:var(--muted); font-size:12px; margin-top:2px;">
+          ID: {{ r.telegram_id }}
+        </div>
+      </div>
+
+      <div style="display:flex; gap:32px;">
+        <div>
+          <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">🤖 GPT-4o-mini</div>
+          <span class="badge badge-blue">{{ r.result_a.get('category', '?') }}</span>
+          <div style="color:var(--muted); font-size:12px; margin-top:4px;">
+            {{ r.result_a.get('brand', '?') }} | conf: {{ r.result_a.get('confidence', '?') }}%
+          </div>
+        </div>
+        <div>
+          <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">🤖 Gemini</div>
+          <span class="badge badge-green">{{ r.result_b.get('category', '?') }}</span>
+          <div style="color:var(--muted); font-size:12px; margin-top:4px;">
+            {{ r.result_b.get('brand', '?') }} | conf: {{ r.result_b.get('confidence', '?') }}%
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="/reviews/resolve/{{ r.id }}">
+        <button type="submit" style="
+          background: rgba(231,76,60,0.15);
+          color: #e74c3c;
+          border: 1px solid rgba(231,76,60,0.3);
+          border-radius: 8px;
+          padding: 8px 16px;
+          cursor: pointer;
+          font-size: 13px;
+        ">
+          ❌ Отклонить (из панели)
+        </button>
+      </form>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

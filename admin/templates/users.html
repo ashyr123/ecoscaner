@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="sidebar">
+  <div class="logo">
+    <h2>♻️ EcoScaner</h2>
+    <span>Admin Panel</span>
+  </div>
+  <nav class="nav">
+    <a href="/"><span class="icon">📊</span> Дашборд</a>
+    <a href="/users" class="active"><span class="icon">👥</span> Пользователи</a>
+    <a href="/activity"><span class="icon">📋</span> Активность</a>
+    <a href="/reviews"><span class="icon">🔎</span> На проверке</a>
+  </nav>
+  <div class="nav nav-bottom">
+    <a href="/logout"><span class="icon">🚪</span> Выйти</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Пользователи</div>
+  <div class="page-sub">Все зарегистрированные пользователи</div>
+
+  <form class="search-bar" method="GET">
+    <input name="search" placeholder="🔍 Поиск по имени или @username" value="{{ search }}">
+    <button type="submit">Найти</button>
+  </form>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Имя</th>
+          <th>Username</th>
+          <th>💎 Баллы</th>
+          <th>♻️ Бутылок</th>
+          <th>Дата регистрации</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--muted)">{{ loop.index }}</td>
+          <td><strong>{{ u.first_name or "—" }}</strong></td>
+          <td style="color:var(--muted)">{{ "@" + u.username if u.username else "—" }}</td>
+          <td><span class="badge badge-green">{{ u.total_points }}</span></td>
+          <td><span class="badge badge-blue">{{ u.total_wastes }}</span></td>
+          <td style="color:var(--muted)">{{ u.created_at[:10] if u.created_at else "—" }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center;color:var(--muted);padding:32px">
+            Пользователи не найдены
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

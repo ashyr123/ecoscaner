@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="sidebar">
+  <div class="logo">
+    <h2>♻️ EcoScaner</h2>
+    <span>Admin Panel</span>
+  </div>
+  <nav class="nav">
+    <a href="/" class="active"><span class="icon">📊</span> Дашборд</a>
+    <a href="/users"><span class="icon">👥</span> Пользователи</a>
+    <a href="/activity"><span class="icon">📋</span> Активность</a>
+    <a href="/reviews"><span class="icon">🔎</span> На проверке</a>
+  </nav>
+  <div class="nav nav-bottom">
+    <a href="/logout"><span class="icon">🚪</span> Выйти</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Дашборд</div>
+  <div class="page-sub">Общая статистика EcoScaner</div>
+
+  <div class="cards-grid">
+    <div class="stat-card green">
+      <div class="label">👥 Всего пользователей</div>
+      <div class="value">{{ stats.total_users }}</div>
+      <div class="sub">+{{ stats.today_users }} сегодня</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="label">♻️ Бутылок сдано</div>
+      <div class="value">{{ stats.total_bottles }}</div>
+      <div class="sub">+{{ stats.today_bottles }} сегодня</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="label">💎 Баллов выдано</div>
+      <div class="value">{{ stats.total_points }}</div>
+      <div class="sub">всего за всё время</div>
+    </div>
+    <div class="stat-card red">
+      <div class="label">📅 Активность сегодня</div>
+      <div class="value">{{ stats.today_bottles }}</div>
+      <div class="sub">фото обработано</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-header">
+        <h3>📈 Активность за 7 дней</h3>
+      </div>
+      <canvas id="chart" height="80"></canvas>
+    </div>
+    <div class="card">
+      <div class="section-header">
+        <h3>⚡ Последние действия</h3>
+      </div>
+      {% for row in activity %}
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <div>
+          <span style="color:var(--text)">{{ row.first_name or row.username or "Аноним" }}</span>
+          <span style="color:var(--muted);margin-left:8px">+{{ row.points }} балл.</span>
+        </div>
+        <span style="color:var(--muted)">{{ row.created_at[:10] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  var labels = JSON.parse('{{ chart_labels | safe }}');
+  var data   = JSON.parse('{{ chart_data | safe }}');
+
+  var ctx = document.getElementById("chart").getContext("2d");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Бутылок",
+        data: data,
+        borderColor: "#2ecc71",
+        backgroundColor: "rgba(46,204,113,0.1)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#8b8fa8" }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: { ticks: { color: "#8b8fa8" }, grid: { color: "rgba(255,255,255,0.04)" } }
+      }
+    }
+  });
+</script>
+{% endblock %}
+
+
