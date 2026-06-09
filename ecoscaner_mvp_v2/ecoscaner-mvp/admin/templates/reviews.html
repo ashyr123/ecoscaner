@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="sidebar">
+  <div class="logo">
+    <h2>♻️ EcoScaner</h2>
+    <span>Admin Panel</span>
+  </div>
+  <nav class="nav">
+    <a href="/"><span class="icon">📊</span> Дашборд</a>
+    <a href="/users"><span class="icon">👥</span> Пользователи</a>
+    <a href="/activity"><span class="icon">📋</span> Активность</a>
+    <a href="/reviews" class="active"><span class="icon">🔎</span> На проверке</a>
+  </nav>
+  <div class="nav nav-bottom">
+    <a href="/logout"><span class="icon">🚪</span> Выйти</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">🔎 На проверке</div>
+  <div class="page-sub">Фото, по которым ИИ не пришли к согласию</div>
+
+  {% if not reviews %}
+  <div class="card" style="text-align:center; padding: 48px; color: var(--muted);">
+    ✅ Очередь пуста — всё проверено!
+  </div>
+  {% endif %}
+
+  {% for r in reviews %}
+  <div class="card" style="margin-bottom: 16px;">
+    <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+
+      <!-- Fotoğraf -->
+      <div style="flex-shrink:0;">
+        {% if r.file_id %}
+        <a href="/reviews/photo/{{ r.id }}" target="_blank" title="Tam ekranda aç">
+          <img
+            src="/reviews/photo/{{ r.id }}"
+            alt="Фото #{{ r.id }}"
+            loading="lazy"
+            style="width:160px; height:160px; object-fit:cover; border-radius:10px;
+                   border:1px solid rgba(255,255,255,0.08); cursor:zoom-in;
+                   transition: transform 0.2s ease; display:block;"
+            onmouseover="this.style.transform='scale(1.04)'"
+            onmouseout="this.style.transform='scale(1)'"
+            onerror="this.parentElement.innerHTML='<div style=&quot;width:160px;height:160px;border-radius:10px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;&quot;>📷 Недоступно</div>'"
+          >
+        </a>
+        {% else %}
+        <div style="width:160px; height:160px; border-radius:10px;
+                    background:rgba(255,255,255,0.05);
+                    display:flex; align-items:center; justify-content:center;
+                    color:var(--muted); font-size:11px;">
+          📷 Нет фото
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Bilgiler -->
+      <div style="flex:1; min-width:220px;">
+
+        <!-- Kullanıcı + tarih -->
+        <div style="font-size:13px; color:var(--muted); margin-bottom:6px;">
+          #{{ r.id }} — {{ r.created_at[:16] }}
+        </div>
+        <div style="font-size:15px; font-weight:600; margin-bottom:2px;">
+          👤 {{ r.first_name or "Аноним" }}
+          {% if r.username %}
+            <span style="color:var(--muted); font-weight:400;">@{{ r.username }}</span>
+          {% endif %}
+        </div>
+        <div style="color:var(--muted); font-size:12px; margin-bottom:14px;">
+          ID: {{ r.telegram_id }}
+        </div>
+
+        <!-- AI Sonuçları -->
+        <div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:16px;">
+          <div>
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">🤖 GPT-4o-mini</div>
+            <span class="badge badge-blue">{{ r.result_a.get('category', '?') }}</span>
+            <div style="color:var(--muted); font-size:12px; margin-top:4px;">
+              {{ r.result_a.get('brand', '?') }} | conf: {{ r.result_a.get('confidence', '?') }}%
+            </div>
+          </div>
+          <div>
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">🤖 Gemini</div>
+            <span class="badge badge-green">{{ r.result_b.get('category', '?') }}</span>
+            <div style="color:var(--muted); font-size:12px; margin-top:4px;">
+              {{ r.result_b.get('brand', '?') }} | conf: {{ r.result_b.get('confidence', '?') }}%
+            </div>
+          </div>
+        </div>
+
+        <!-- Karar Butonları -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          {% for label, cat in [("🧴 Пластик","plastic"),("🥫 Металл","metal"),("🍶 Стекло","glass"),("📦 Картон","cardboard")] %}
+          <form method="POST" action="/reviews/resolve/{{ r.id }}" style="margin:0;">
+            <input type="hidden" name="category" value="{{ cat }}">
+            <button type="submit" style="
+              background: rgba(46,204,113,0.12);
+              color: #2ecc71;
+              border: 1px solid rgba(46,204,113,0.25);
+              border-radius: 8px;
+              padding: 6px 12px;
+              cursor: pointer;
+              font-size: 12px;
+              transition: background 0.15s;
+            "
+            onmouseover="this.style.background='rgba(46,204,113,0.25)'"
+            onmouseout="this.style.background='rgba(46,204,113,0.12)'">
+              {{ label }}
+            </button>
+          </form>
+          {% endfor %}
+
+          <form method="POST" action="/reviews/resolve/{{ r.id }}" style="margin:0;">
+            <input type="hidden" name="category" value="reject">
+            <button type="submit" style="
+              background: rgba(231,76,60,0.12);
+              color: #e74c3c;
+              border: 1px solid rgba(231,76,60,0.25);
+              border-radius: 8px;
+              padding: 6px 12px;
+              cursor: pointer;
+              font-size: 12px;
+              transition: background 0.15s;
+            "
+            onmouseover="this.style.background='rgba(231,76,60,0.25)'"
+            onmouseout="this.style.background='rgba(231,76,60,0.12)'">
+              ❌ Отклонить
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

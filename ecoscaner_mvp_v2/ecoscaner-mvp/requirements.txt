@@ -1,0 +1,19 @@
+# EcoScaner — Python bağımlılıkları
+# Kurulum: pip install -r requirements.txt
+
+# Telegram bot
+python-telegram-bot==21.9
+
+# Görsel işleme
+Pillow>=10.0.0
+imagehash>=4.3.1
+
+# AI servisleri
+openai>=1.0.0
+httpx>=0.25.0
+
+# Web panel (admin)
+Flask>=3.0.0
+
+# Ortam değişkenleri
+python-dotenv>=1.0.0

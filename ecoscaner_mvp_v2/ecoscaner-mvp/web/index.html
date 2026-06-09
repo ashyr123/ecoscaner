@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EcoScaner App</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        dark: '#0a0a0a',
+                        card: '#161b16',
+                        primary: '#00ff66',
+                        primaryHover: '#00cc52',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 0%, #112a18 0%, transparent 50%),
+                              radial-gradient(circle at 50% 100%, #0a1a0f 0%, transparent 50%);
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* App Container for Desktop (Mobile feel) */
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: 0 0 40px rgba(0, 255, 102, 0.05);
+            position: relative;
+            padding-bottom: 80px; /* Space for navbar */
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 102, 0.1);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(0, 255, 102, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 255, 102, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Neon Text & Buttons */
+        .neon-text {
+            color: #00ff66;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
+        .neon-btn {
+            background: linear-gradient(135deg, #00ff66 0%, #00cc52 100%);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .neon-btn:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.7);
+            transform: scale(1.05);
+        }
+
+        /* Scanner Animations */
+        .scanner-frame {
+            position: relative;
+            width: 250px;
+            height: 350px;
+            border: 2px dashed rgba(0, 255, 102, 0.3);
+            border-radius: 20px;
+            margin: 0 auto;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .laser-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #00ff66;
+            box-shadow: 0 0 15px 5px rgba(0, 255, 102, 0.5);
+            animation: scanAnim 2s infinite linear;
+            display: none;
+        }
+
+        @keyframes scanAnim {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .pulse-circle {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(0, 255, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0); }
+        }
+
+        /* View Transitions */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Bottom Nav */
+        .nav-item {
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active {
+            color: #00ff66;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+            transform: translateY(-3px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 102, 0.3); border-radius: 10px; }
+
+        /* Chatbot Overlay */
+        #chat-overlay {
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #chat-overlay.open {
+            transform: translateY(0);
+        }
+        
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .chat-bubble.bot {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom-left-radius: 4px;
+            margin-right: auto;
+            border: 1px solid rgba(0,255,102,0.2);
+        }
+        .chat-bubble.user {
+            background: rgba(0, 255, 102, 0.15);
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+            color: #fff;
+            border: 1px solid rgba(0,255,102,0.4);
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #00ff66;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            margin-right: 2px;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(0,255,102,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 12px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        #app-loading {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(5,5,5,0.92);
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px;
+        }
+        #app-loading.hidden { display: none; }
+
+        #toast-container {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 90; width: min(440px, 92vw); display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 12px 16px; border-radius: 14px; font-size: 0.85rem;
+            backdrop-filter: blur(12px); animation: fadeIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .toast.success { background: rgba(0,255,102,0.15); border-color: rgba(0,255,102,0.4); color: #b8ffd4; }
+        .toast.error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); color: #fecaca; }
+        .toast.info { background: rgba(255,255,255,0.08); color: #e5e5e5; }
+
+        .neon-btn:disabled, .btn-disabled {
+            opacity: 0.45; cursor: not-allowed; transform: none !important;
+            box-shadow: none !important;
+        }
+
+        #buy-modal.hidden { display: none !important; }
+    </style>
+</head>
+<body class="antialiased text-gray-200">
+
+<div id="app-loading">
+    <i class="ph ph-recycle text-4xl neon-text animate-pulse"></i>
+    <p class="text-sm text-gray-400" data-i18n="loading">Загрузка...</p>
+</div>
+<div id="toast-container"></div>
+
+<div class="app-container flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="flex justify-between items-center p-6 pb-2">
+        <div class="flex items-center gap-2">
+            <i class="ph ph-recycle text-3xl neon-text"></i>
+            <h1 class="text-xl font-bold tracking-wider">Eco<span class="text-primary">Scaner</span></h1>
+        </div>
+        
+        <!-- Language Selector -->
+        <div class="relative group z-50">
+            <button class="glass-card px-3 py-1.5 flex items-center gap-2 text-sm font-semibold rounded-full hover:bg-white/5">
+                <i class="ph ph-globe text-primary"></i>
+                <span id="current-lang">RU</span>
+            </button>
+            <div class="absolute right-0 mt-2 w-24 glass-card p-1 hidden group-hover:block">
+                <button onclick="setLanguage('ru')" class="w-full text-left px-3 py-2 text-sm hover:bg-primary/20 rounded-lg transition">🇷🇺 RUS</button>
+                <button onclick="setLanguage('en')" class="w-full text-left px-3 py-2 text-sm hover:bg-primary/20 rounded-lg transition">🇬🇧 ENG</button>
+                <button onclick="setLanguage('tr')" class="w-full text-left px-3 py-2 text-sm hover:bg-primary/20 rounded-lg transition">🇹🇷 TUR</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 overflow-y-auto relative" id="main-content">
+
+        <!-- VIEW: DASHBOARD -->
+        <section id="view-dashboard" class="view-section active">
+            <!-- User Stats -->
+            <div class="glass-card p-5 mb-6 flex justify-between items-center bg-gradient-to-br from-card to-dark">
+                <div>
+                    <p class="text-gray-400 text-sm mb-1" data-i18n="greeting">Привет, Эко-герой!</p>
+                    <h2 id="user-name" class="text-2xl font-bold text-white">—</h2>
+                    <div id="user-level-badge" class="mt-2 inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full border border-primary/20 text-xs">
+                        <i class="ph-fill ph-star"></i> <span id="user-level-text">Lvl 1</span>
+                        <span id="user-level-label" class="opacity-80 text-[10px] block mt-0.5"></span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-400 text-sm mb-1" data-i18n="balance">Баланс</p>
+                    <div class="text-3xl font-bold neon-text flex items-center justify-end gap-1">
+                        <span id="user-points">0</span> <i class="ph-fill ph-coin"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impact Stats -->
+            <h3 class="text-lg font-semibold mb-4" data-i18n="myImpact">Мой вклад</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="glass-card p-4 text-center">
+                    <div class="w-10 h-10 mx-auto bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mb-2">
+                        <i class="ph ph-drop text-xl"></i>
+                    </div>
+                    <p id="saved-water" class="text-2xl font-bold text-white">0L</p>
+                    <p class="text-xs text-gray-400" data-i18n="savedWater">Сэкономлено воды</p>
+                </div>
+                <div class="glass-card p-4 text-center">
+                    <div class="w-10 h-10 mx-auto bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-2">
+                        <i class="ph ph-bottle text-xl"></i>
+                    </div>
+                    <p class="text-2xl font-bold text-white" id="bottles-count">0</p>
+                    <p class="text-xs text-gray-400" data-i18n="bottlesScanned">Бутылок сдано</p>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <h3 class="text-lg font-semibold mb-4" data-i18n="recentActivity">История</h3>
+            <div class="glass-card p-2" id="activity-list"></div>
+        </section>
+
+        <!-- VIEW: SCANNER -->
+        <section id="view-scan" class="view-section">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2" data-i18n="aiScanner">AI Сканер</h2>
+                <p class="text-sm text-gray-400" data-i18n="scanDesc">Наведите камеру на бутылку, чтобы получить очки.</p>
+            </div>
+
+            <!-- Scanner Frame -->
+            <div class="scanner-frame bg-black/50 mb-8 backdrop-blur-sm" id="scanner-frame">
+                <i class="ph ph-bottle text-6xl text-gray-600" id="bottle-icon"></i>
+                <div class="laser-line" id="scan-laser"></div>
+            </div>
+
+            <!-- Hidden File Input for Real Camera/Gallery Access -->
+            <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageSelection(event)">
+
+            <!-- Scan Action Area -->
+            <div class="text-center relative">
+                <p id="scan-status" class="text-primary font-semibold mb-6 h-6"></p>
+                
+                <button onclick="document.getElementById('camera-input').click()" id="scan-btn" class="neon-btn pulse-circle w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-camera text-3xl"></i>
+                </button>
+                <p class="text-xs text-gray-500 uppercase tracking-widest" data-i18n="tapToScan">Нажмите для сканирования</p>
+            </div>
+        </section>
+
+        <!-- VIEW: LEADERBOARD -->
+        <section id="view-leaderboard" class="view-section">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold" data-i18n="leaderboard">Рейтинг</h2>
+                    <p class="text-sm text-gray-400" data-i18n="topUsers">Топ эко-героев</p>
+                </div>
+                <div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold border border-primary/30">
+                    Топ 100
+                </div>
+            </div>
+
+            <!-- Podiums (Top 3) -->
+            <div id="leaderboard-podium" class="flex justify-center items-end gap-2 mb-8 h-40"></div>
+
+            <!-- List (rank 4+) -->
+            <div id="leaderboard-list" class="space-y-3"></div>
+        </section>
+
+        <!-- VIEW: STORE -->
+        <section id="view-store" class="view-section">
+            <h2 class="text-2xl font-bold mb-2" data-i18n="store">Магазин</h2>
+            <p class="text-sm text-gray-400 mb-6" data-i18n="storeDesc">Обменивайте очки на реальные скидки.</p>
+
+            <div id="store-list" class="grid grid-cols-1 gap-4"></div>
+        </section>
+
+    </main>
+
+    <!-- Floating Chat Button -->
+    <button onclick="toggleChat()" class="absolute bottom-24 right-6 w-14 h-14 bg-card border border-primary/30 rounded-full flex items-center justify-center shadow-lg hover:shadow-[0_0_15px_rgba(0,255,102,0.5)] transition z-40 group">
+        <i class="ph ph-chat-teardrop-text text-2xl text-primary group-hover:scale-110 transition"></i>
+    </button>
+
+    <!-- Chatbot Overlay -->
+    <div id="chat-overlay" class="absolute bottom-20 left-4 right-4 bg-dark/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden" style="height: 60vh;">
+        <div class="bg-card p-4 border-b border-primary/10 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="ph-fill ph-robot text-2xl text-primary"></i>
+                <h3 class="font-bold text-sm" data-i18n="ecoAssistant">Eco Assistant</h3>
+            </div>
+            <button onclick="toggleChat()" class="text-gray-400 hover:text-white">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-2 text-sm">
+            <!-- Initial bot greeting -->
+            <div class="chat-bubble bot" data-i18n="chatGreeting">Привет! Я твой эко-ассистент. Задай мне вопрос о переработке или пластике!</div>
+        </div>
+        <div class="p-3 bg-card border-t border-primary/10 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-dark border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50 text-white" placeholder="Спроси меня..." data-i18n-placeholder="chatPlaceholder">
+            <button onclick="sendChatMessage()" class="bg-primary/20 text-primary px-3 py-2 rounded-lg hover:bg-primary hover:text-black transition">
+                <i class="ph-fill ph-paper-plane-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="absolute bottom-0 w-full glass-card border-b-0 border-l-0 border-r-0 rounded-t-3xl rounded-b-none bg-dark/90 backdrop-blur-lg z-50">
+        <div class="flex justify-around items-center p-4">
+            <button onclick="switchView('dashboard')" class="nav-item active flex flex-col items-center gap-1" data-target="dashboard">
+                <i class="ph-fill ph-house text-2xl"></i>
+                <span class="text-[10px] font-semibold" data-i18n="navHome">Главная</span>
+            </button>
+            <button onclick="switchView('scan')" class="nav-item flex flex-col items-center gap-1 -mt-6" data-target="scan">
+                <div class="bg-primary text-black w-14 h-14 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(0,255,102,0.5)] border-4 border-dark">
+                    <i class="ph ph-scan text-3xl"></i>
+                </div>
+            </button>
+            <button onclick="switchView('leaderboard')" class="nav-item flex flex-col items-center gap-1" data-target="leaderboard">
+                <i class="ph-fill ph-trophy text-2xl"></i>
+                <span class="text-[10px] font-semibold" data-i18n="navTop">Топ</span>
+            </button>
+            <button onclick="switchView('store')" class="nav-item flex flex-col items-center gap-1" data-target="store">
+                <i class="ph-fill ph-storefront text-2xl"></i>
+                <span class="text-[10px] font-semibold" data-i18n="navStore">Магазин</span>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Buy confirmation modal -->
+    <div id="buy-modal" class="fixed inset-0 bg-black/80 z-[65] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="glass-card p-6 max-w-[320px] w-full">
+            <h3 class="text-lg font-bold mb-2" data-i18n="confirmBuy">Подтвердить покупку?</h3>
+            <p id="buy-modal-desc" class="text-sm text-gray-400 mb-6"></p>
+            <div class="flex gap-3">
+                <button onclick="closeBuyModal()" class="flex-1 py-3 rounded-xl border border-white/10 text-gray-300" data-i18n="cancel">Отмена</button>
+                <button onclick="confirmBuy()" class="flex-1 neon-btn py-3 rounded-xl" data-i18n="confirm">Купить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan result modal -->
+    <div id="result-modal" class="fixed inset-0 bg-black/80 z-[60] hidden flex-col items-center justify-center backdrop-blur-sm">
+        <div class="glass-card p-8 text-center max-w-[300px] transform scale-90 transition-transform duration-300" id="modal-content">
+            <div id="modal-icon-container" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border">
+                <i id="modal-icon" class="ph text-4xl"></i>
+            </div>
+            <h2 id="modal-title" class="text-2xl font-bold mb-2 text-white"></h2>
+            <p id="modal-desc" class="text-gray-400 text-sm mb-6"></p>
+            <button onclick="closeModal()" class="neon-btn w-full py-3 rounded-xl" data-i18n="continue">Продолжить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let appConfig = {};
+    let hasGeminiChat = false;
+    let pendingBuyItemId = null;
+    const tg = window.Telegram?.WebApp;
+
+    async function loadAppConfig() {
+        const res = await fetch('/api/app/config', { credentials: 'include' });
+        if (!res.ok) throw new Error('Config failed');
+        appConfig = await res.json();
+        hasGeminiChat = !!appConfig.hasGeminiChat;
+        if (appConfig.authenticated) return true;
+        return false;
+    }
+
+    async function authenticateUser() {
+        if (tg?.initData) {
+            const res = await fetch('/api/app/auth', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: tg.initData }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+                appUserId = data.userId;
+                tg.ready?.();
+                tg.expand?.();
+                return true;
+            }
+            showToast(data.error || 'Auth failed', 'error');
+        }
+        if (appConfig.allowDevAuth) {
+            const params = new URLSearchParams(window.location.search);
+            const uid = params.get('user_id') || appConfig.devUserId;
+            if (uid) {
+                const res = await fetch('/api/app/auth/dev', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: parseInt(uid, 10) }),
+                });
+                const data = await res.json();
+                if (data.ok) { appUserId = data.userId; return true; }
+            }
+        }
+        return false;
+    }
+
+    function showToast(msg, type = 'info') {
+        const c = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = msg;
+        c.appendChild(el);
+        setTimeout(() => el.remove(), 4200);
+    }
+
+    function hideAppLoading() {
+        document.getElementById('app-loading').classList.add('hidden');
+    }
+
+    // --- TRANSLATIONS (i18n) ---
+    const translations = {
+        ru: {
+            greeting: "Привет, Эко-герой!",
+            balance: "Баланс",
+            myImpact: "Мой вклад",
+            savedWater: "Сэкономлено воды",
+            bottlesScanned: "Бутылок сдано",
+            recentActivity: "История",
+            aiScanner: "AI Сканер",
+            scanDesc: "Сделайте фото бутылки, чтобы получить очки.",
+            tapToScan: "Нажмите для фото",
+            leaderboard: "Рейтинг",
+            topUsers: "Топ эко-героев",
+            store: "Магазин",
+            storeDesc: "Обменивайте очки на реальные скидки.",
+            buy: "Купить",
+            navHome: "Главная",
+            navTop: "Топ",
+            navStore: "Магазин",
+            successTitle: "Отлично!",
+            errorTitle: "Упс!",
+            successDesc: "Мусор принят! Найдено: ",
+            errorDesc: "Это не похоже на перерабатываемую пластиковую бутылку.",
+            points: "очков!",
+            continue: "Продолжить",
+            langName: "RU",
+            ecoAssistant: "Эко-Ассистент",
+            chatGreeting: "Привет! Я Gemini, твой эко-ассистент. Задай мне вопрос о переработке или экологии!",
+            chatPlaceholder: "Спроси меня...",
+            noActivity: "Пока нет записей. Сделай первое фото!",
+            emptyLeaderboard: "Рейтинг пуст. Будь первым!",
+            emptyStore: "Магазин скоро откроется.",
+            youLabel: "(Ты)",
+            loading: "Загрузка...",
+            scanning: "Двойной ИИ анализирует...",
+            confirmBuy: "Подтвердить покупку?",
+            cancel: "Отмена",
+            confirm: "Купить",
+            buySuccess: "Покупка успешна!",
+            buyFail: "Не удалось купить",
+            reviewPending: "Отправлено на проверку",
+            authRequired: "Откройте приложение через Telegram"
+        },
+        en: {
+            greeting: "Hello, Eco-Hero!",
+            balance: "Balance",
+            myImpact: "My Impact",
+            savedWater: "Water Saved",
+            bottlesScanned: "Bottles Scanned",
+            recentActivity: "History",
+            aiScanner: "AI Scanner",
+            scanDesc: "Take a photo of a bottle to earn points.",
+            tapToScan: "Tap to snap",
+            leaderboard: "Leaderboard",
+            topUsers: "Top Eco-Heroes",
+            store: "Store",
+            storeDesc: "Exchange points for real discounts.",
+            buy: "Buy",
+            navHome: "Home",
+            navTop: "Top",
+            navStore: "Store",
+            successTitle: "Awesome!",
+            errorTitle: "Oops!",
+            successDesc: "Recyclable found! Item: ",
+            errorDesc: "This doesn't look like a recyclable plastic bottle.",
+            points: "points!",
+            continue: "Continue",
+            langName: "EN",
+            ecoAssistant: "Eco Assistant",
+            chatGreeting: "Hi! I'm Gemini, your eco-assistant. Ask me any question about recycling or the environment!",
+            chatPlaceholder: "Ask me anything...",
+            noActivity: "No activity yet. Take your first photo!",
+            emptyLeaderboard: "Leaderboard is empty. Be the first!",
+            emptyStore: "Store coming soon.",
+            youLabel: "(You)",
+            loading: "Loading...",
+            scanning: "Dual AI analyzing...",
+            confirmBuy: "Confirm purchase?",
+            cancel: "Cancel",
+            confirm: "Buy",
+            buySuccess: "Purchase successful!",
+            buyFail: "Purchase failed",
+            reviewPending: "Sent for review",
+            authRequired: "Open the app from Telegram"
+        },
+        tr: {
+            greeting: "Merhaba Eko-Kahraman!",
+            balance: "Bakiye",
+            myImpact: "Etkim",
+            savedWater: "Kurtarılan Su",
+            bottlesScanned: "Okutulan Şişe",
+            recentActivity: "Geçmiş",
+            aiScanner: "Yapay Zeka Tarayıcı",
+            scanDesc: "Puan kazanmak için şişenin fotoğrafını çekin.",
+            tapToScan: "Fotoğraf çek",
+            leaderboard: "Sıralama",
+            topUsers: "En İyi Kahramanlar",
+            store: "Mağaza",
+            storeDesc: "Puanları gerçek indirimlere dönüştürün.",
+            buy: "Al",
+            navHome: "Ana Sayfa",
+            navTop: "Sıralama",
+            navStore: "Mağaza",
+            successTitle: "Harika!",
+            errorTitle: "Hata!",
+            successDesc: "Geri dönüştürülebilir bulundu! Ürün: ",
+            errorDesc: "Bu geri dönüştürülebilir bir plastik şişeye benzemiyor.",
+            points: "puan!",
+            continue: "Devam Et",
+            langName: "TR",
+            ecoAssistant: "Eko Asistan",
+            chatGreeting: "Merhaba! Ben Gemini, eko-asistanınızım. Geri dönüşüm veya çevre ile ilgili herhangi bir soru sorun!",
+            chatPlaceholder: "Bana sor...",
+            noActivity: "Henüz kayıt yok. İlk fotoğrafını çek!",
+            emptyLeaderboard: "Sıralama boş. İlk sen ol!",
+            emptyStore: "Mağaza yakında.",
+            youLabel: "(Sen)",
+            loading: "Yükleniyor...",
+            scanning: "Çift AI analiz ediyor...",
+            confirmBuy: "Satın almayı onayla?",
+            cancel: "İptal",
+            confirm: "Al",
+            buySuccess: "Satın alma başarılı!",
+            buyFail: "Satın alınamadı",
+            reviewPending: "İncelemeye gönderildi",
+            authRequired: "Uygulamayı Telegram'dan açın"
+        }
+    };
+
+    let currentLanguage = 'ru';
+    let userPoints = 0;
+    let bottlesScannedCount = 0;
+    let appUserId = null;
+    let appProfile = null;
+    let storeItemsCache = [];
+
+    async function apiFetch(path, options = {}) {
+        const res = await fetch(path, {
+            credentials: 'include',
+            ...options,
+            headers: {
+                ...(options.headers || {}),
+            },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || data.message || res.statusText);
+        }
+        return data;
+    }
+
+    function formatActivityTime(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr.replace(' ', 'T') + 'Z');
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = d.toDateString() === yesterday.toDateString();
+        const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (currentLanguage === 'ru') {
+            if (isToday) return `Сегодня, ${time}`;
+            if (isYesterday) return `Вчера, ${time}`;
+        } else if (currentLanguage === 'tr') {
+            if (isToday) return `Bugün, ${time}`;
+            if (isYesterday) return `Dün, ${time}`;
+        } else {
+            if (isToday) return `Today, ${time}`;
+            if (isYesterday) return `Yesterday, ${time}`;
+        }
+        return d.toLocaleDateString() + ', ' + time;
+    }
+
+    function renderProfile(p) {
+        appProfile = p;
+        userPoints = p.totalPoints || 0;
+        bottlesScannedCount = p.totalWastes || 0;
+        document.getElementById('user-name').innerText = p.firstName || 'Eco-Hero';
+        document.getElementById('user-level-text').innerText = `Lvl ${p.level || 1}`;
+        const lbl = document.getElementById('user-level-label');
+        if (lbl) lbl.innerText = p.levelLabel || '';
+        document.getElementById('user-points').innerText = userPoints;
+        document.getElementById('bottles-count').innerText = bottlesScannedCount;
+        document.getElementById('saved-water').innerText = `${p.savedWaterLiters || 0}L`;
+    }
+
+    function renderActivity(items) {
+        const list = document.getElementById('activity-list');
+        if (!items || items.length === 0) {
+            list.innerHTML = `<p class="p-4 text-center text-gray-500 text-sm">${translations[currentLanguage].noActivity}</p>`;
+            return;
+        }
+        list.innerHTML = items.map(item => `
+            <div class="flex items-center justify-between p-3 border-b border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary/20 p-2 rounded-lg text-primary"><i class="ph ph-camera"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold">${item.brand}</p>
+                        <p class="text-xs text-gray-400">${formatActivityTime(item.createdAt)}</p>
+                    </div>
+                </div>
+                <span class="text-primary font-bold">+${item.points}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderLeaderboard(data) {
+        const entries = data.entries || [];
+        const podium = document.getElementById('leaderboard-podium');
+        const list = document.getElementById('leaderboard-list');
+        const youLbl = translations[currentLanguage].youLabel;
+
+        if (entries.length === 0) {
+            podium.innerHTML = '';
+            list.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">${translations[currentLanguage].emptyLeaderboard}</p>`;
+            return;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        const order = entries.length >= 3 ? [1, 0, 2] : entries.map((_, i) => i);
+        const heights = ['h-28', 'h-20', 'h-16'];
+        const borderColors = ['border-yellow-400', 'border-gray-400', 'border-amber-600'];
+        const crown = (idx) => idx === 0 ? '<i class="ph-fill ph-crown text-yellow-400 text-2xl mb-1"></i>' : '<div class="h-6 mb-1"></div>';
+
+        podium.innerHTML = order.map((idx, pos) => {
+            const e = entries[idx];
+            if (!e) return '';
+            const name = e.firstName + (e.isCurrentUser ? ` ${youLbl}` : '');
+            const size = pos === 0 ? 'w-16 h-16' : 'w-12 h-12';
+            return `
+                <div class="flex flex-col items-center w-1/3">
+                    ${crown(idx)}
+                    <div class="${size} rounded-full bg-gray-700 flex items-center justify-center mb-2 border-2 ${borderColors[idx]}">${medals[idx]}</div>
+                    <div class="glass-card w-full ${heights[idx]} flex flex-col justify-center items-center bg-gradient-to-t from-gray-800 to-transparent px-1">
+                        <span class="text-xs font-bold text-center truncate w-full">${name}</span>
+                        <span class="text-primary text-sm font-bold">${e.points}</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+        list.innerHTML = entries.slice(3).map(e => `
+            <div class="glass-card flex justify-between items-center p-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-400 font-bold w-4">${e.rank}</span>
+                    <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center"><i class="ph ph-user"></i></div>
+                    <span class="font-semibold">${e.firstName}${e.isCurrentUser ? ' ' + youLbl : ''}</span>
+                </div>
+                <span class="text-primary font-bold">${e.points}</span>
+            </div>
+        `).join('');
+    }
+
+    function storeEmoji(name) {
+        const n = (name || '').trim();
+        return n ? n.charAt(0) : '🎁';
+    }
+
+    function renderStore(store) {
+        const container = document.getElementById('store-list');
+        const items = store.items || [];
+        if (items.length === 0) {
+            container.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">${translations[currentLanguage].emptyStore}</p>`;
+            return;
+        }
+        storeItemsCache = items;
+        const buyLabel = translations[currentLanguage].buy;
+        container.innerHTML = items.map(item => {
+            const can = item.canAfford;
+            const btnClass = can
+                ? 'bg-white/10 hover:bg-primary hover:text-black cursor-pointer'
+                : 'bg-white/5 text-gray-500 btn-disabled';
+            return `
+                <div class="glass-card p-4 flex gap-4 items-center relative overflow-hidden group">
+                    <div class="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-bold shrink-0">
+                        ${storeEmoji(item.name)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold truncate">${item.name}</h4>
+                        <p class="text-xs text-gray-400 mb-2 line-clamp-2">${item.description}</p>
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-primary font-bold flex items-center gap-1 shrink-0"><i class="ph-fill ph-coin"></i> ${item.price}</span>
+                            <button ${can ? '' : 'disabled'} onclick="${can ? `openBuyModal(${item.id})` : ''}"
+                                class="${btnClass} text-xs px-3 py-1.5 rounded-lg transition font-semibold">${buyLabel}</button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function openBuyModal(itemId) {
+        const item = storeItemsCache.find(i => i.id === itemId);
+        if (!item) return;
+        pendingBuyItemId = itemId;
+        document.getElementById('buy-modal-desc').innerText =
+            `${item.name} — ${item.price} ${translations[currentLanguage].points}`;
+        document.getElementById('buy-modal').classList.remove('hidden');
+        document.getElementById('buy-modal').classList.add('flex');
+    }
+
+    function closeBuyModal() {
+        pendingBuyItemId = null;
+        document.getElementById('buy-modal').classList.add('hidden');
+        document.getElementById('buy-modal').classList.remove('flex');
+    }
+
+    async function confirmBuy() {
+        if (!pendingBuyItemId) return;
+        try {
+            const res = await apiFetch('/api/app/store/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId: pendingBuyItemId }),
+            });
+            closeBuyModal();
+            if (res.ok) {
+                showToast(translations[currentLanguage].buySuccess, 'success');
+                renderProfile(res.profile);
+                renderStore(res.store);
+            } else {
+                showToast(res.message || translations[currentLanguage].buyFail, 'error');
+            }
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    async function loadAppData() {
+        try {
+            const [profRes, actRes, lbRes, storeRes] = await Promise.all([
+                apiFetch('/api/app/profile'),
+                apiFetch('/api/app/activity'),
+                apiFetch('/api/app/leaderboard'),
+                apiFetch('/api/app/store'),
+            ]);
+            if (profRes.userId) appUserId = profRes.userId;
+            renderProfile(profRes.profile);
+            renderActivity(actRes.activity);
+            renderLeaderboard(lbRes.leaderboard);
+            renderStore(storeRes.store);
+        } catch (e) {
+            console.error('App data load failed:', e);
+            showToast(e.message, 'error');
+        }
+    }
+
+    function setLanguage(lang) {
+        currentLanguage = lang;
+        document.getElementById('current-lang').innerText = translations[lang].langName;
+        
+        const elements = document.querySelectorAll('[data-i18n]');
+        elements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang][key]) {
+                el.innerText = translations[lang][key];
+            }
+        });
+
+        const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
+        placeholders.forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (translations[lang][key]) {
+                el.placeholder = translations[lang][key];
+            }
+        });
+    }
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + viewId).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('active');
+            if(el.getAttribute('data-target') === viewId && viewId !== 'scan') {
+                el.classList.add('active');
+            }
+        });
+        
+        // Hide chat if opening a new view
+        document.getElementById('chat-overlay').classList.remove('open');
+    }
+
+    function toggleChat() {
+        const chat = document.getElementById('chat-overlay');
+        chat.classList.toggle('open');
+    }
+
+    async function handleImageSelection(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            showScanningUI(e.target.result);
+            await uploadScanToServer(file);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function uploadScanToServer(file) {
+        const form = new FormData();
+        form.append('image', file);
+        try {
+            const res = await fetch('/api/app/scan', {
+                method: 'POST',
+                credentials: 'include',
+                body: form,
+            });
+            const data = await res.json();
+            resetScanningUI();
+            if (data.ok) {
+                handleScanResult({
+                    isRecyclable: true,
+                    brand: data.brand,
+                    itemType: data.itemType,
+                    points: data.points,
+                    message: data.message,
+                });
+            } else if (data.status === 'review') {
+                handleScanResult({
+                    isRecyclable: false,
+                    error: true,
+                    message: translations[currentLanguage].reviewPending,
+                });
+            } else {
+                handleScanResult({
+                    isRecyclable: false,
+                    error: true,
+                    message: data.message || translations[currentLanguage].errorDesc,
+                });
+            }
+        } catch (err) {
+            resetScanningUI();
+            showToast(err.message, 'error');
+            handleScanResult({ isRecyclable: false, error: true, message: err.message });
+        }
+    }
+
+    function showScanningUI(bgImage) {
+        const frame = document.getElementById('scanner-frame');
+        const laser = document.getElementById('scan-laser');
+        const status = document.getElementById('scan-status');
+        const icon = document.getElementById('bottle-icon');
+        const btn = document.getElementById('scan-btn');
+        
+        frame.style.backgroundImage = `url(${bgImage})`;
+        icon.style.display = 'none';
+        laser.style.display = 'block';
+        status.innerText = translations[currentLanguage].scanning;
+        btn.disabled = true;
+        btn.classList.remove('pulse-circle');
+    }
+
+    function resetScanningUI() {
+        const frame = document.getElementById('scanner-frame');
+        const laser = document.getElementById('scan-laser');
+        const status = document.getElementById('scan-status');
+        const icon = document.getElementById('bottle-icon');
+        const btn = document.getElementById('scan-btn');
+        const fileInput = document.getElementById('camera-input');
+
+        frame.style.backgroundImage = 'none';
+        icon.style.display = 'block';
+        laser.style.display = 'none';
+        status.innerText = "";
+        btn.disabled = false;
+        btn.classList.add('pulse-circle');
+        fileInput.value = ""; // Reset input
+    }
+
+    function handleScanResult(data) {
+        const modal = document.getElementById('result-modal');
+        const content = document.getElementById('modal-content');
+        const title = document.getElementById('modal-title');
+        const desc = document.getElementById('modal-desc');
+        const iconCont = document.getElementById('modal-icon-container');
+        const icon = document.getElementById('modal-icon');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        if (data.isRecyclable && !data.error) {
+            // Success State
+            iconCont.className = "w-20 h-20 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-4 border border-primary";
+            icon.className = "ph ph-check text-4xl";
+            title.innerText = translations[currentLanguage].successTitle;
+            
+            const itemBrand = data.brand && data.brand !== "Unknown" ? data.brand : (data.itemType || "Item");
+            desc.innerHTML = `${translations[currentLanguage].successDesc} <strong>${itemBrand}</strong>. <br> <span class="text-primary font-bold">+${data.points}</span> ${translations[currentLanguage].points}`;
+            if (data.message) desc.innerHTML += `<br><span class="text-xs text-gray-500">${data.message}</span>`;
+            modal.dataset.success = "true";
+        } else {
+            iconCont.className = "w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500";
+            icon.className = "ph ph-x text-4xl";
+            title.innerText = translations[currentLanguage].errorTitle;
+            desc.innerText = data.message || translations[currentLanguage].errorDesc;
+            
+            modal.dataset.success = "false";
+        }
+
+        setTimeout(() => {
+            content.classList.remove('scale-90');
+            content.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('result-modal');
+        const content = document.getElementById('modal-content');
+        
+        content.classList.remove('scale-100');
+        content.classList.add('scale-90');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            if (modal.dataset.success === "true") {
+                loadAppData();
+            }
+            
+            switchView('dashboard');
+        }, 300);
+    }
+
+    async function sendChatMessage() {
+        if (!hasGeminiChat) {
+            showToast('Chat not configured on server', 'error');
+            return;
+        }
+        const inputField = document.getElementById('chat-input');
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        // Add user message to UI
+        appendChatMessage('user', text);
+        inputField.value = "";
+
+        // Add typing indicator
+        const typingId = appendTypingIndicator();
+
+        try {
+            const result = await apiFetch('/api/app/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, language: currentLanguage }),
+            });
+            removeElement(typingId);
+            appendChatMessage('bot', result.reply || '...');
+        } catch (error) {
+            removeElement(typingId);
+            appendChatMessage('bot', error.message);
+        }
+    }
+
+    function appendChatMessage(sender, text) {
+        const chatContainer = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = `chat-bubble ${sender}`;
+        // Prevent raw HTML rendering from LLM output, allow basic text
+        div.textContent = text; 
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+        const chatContainer = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        const id = 'typing-' + Date.now();
+        div.id = id;
+        div.className = `chat-bubble bot typing-indicator`;
+        div.innerHTML = `<span></span><span></span><span></span>`;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return id;
+    }
+
+    function removeElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // Allow Enter key to send message
+    document.getElementById('chat-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
+
+    // Initialize
+    setLanguage('ru');
+    (async () => {
+        try {
+            await loadAppConfig();
+            const authed = await authenticateUser();
+            if (!authed) {
+                showToast(translations[currentLanguage].authRequired, 'error');
+            }
+            await loadAppData();
+        } catch (e) {
+            showToast(e.message, 'error');
+        } finally {
+            hideAppLoading();
+        }
+    })();
+
+</script>
+</body>
+</html>
