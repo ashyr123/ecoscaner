@@ -2,7 +2,7 @@
 # Bonus puan veren markalar — AI'dan gelen brand değeriyle eşleştirilir.
 # Buraya istediğin markayı ekleyebilirsin.
 # multiplier: 1.0 = normal puan, 1.5 = %50 bonus, 2.0 = 2x puan
-
+#taze modullar gosulmaly
 BONUS_BRANDS: dict[str, float] = {
     # Cola grubu
     "pepsi":        1.5,
